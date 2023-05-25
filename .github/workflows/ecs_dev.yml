@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     outputs:
-      build-output : ${{steps.task-def.outputs.task-definition}}
+      build-output : ${{steps.output-ch.outputs.task}}
     
     steps:
     - name: Checkout
@@ -89,18 +89,24 @@ jobs:
         container-name: ${{ env.CONTAINER_NAME }}
         image: ${{ steps.build-image.outputs.image }}
 
+    - name : Step env output
+      id : output-ch
+      env:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+      run : |
+        echo "task=$task-definition" >> $GITHUB_OUTPUT
+
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     environment: production
-    env: 
-      ECS_TASK_DEFINITION:  hsudo-dev-task-revision5.json
 
     steps:
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: ${{ env.ECS_TASK_DEFINITION }}
+        task-definition: ${{ needs.build.outputs.build-output }}
 #         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
