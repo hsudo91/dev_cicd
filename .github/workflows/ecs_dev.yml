@@ -48,7 +48,9 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     environment: production
-
+    outputs:
+      build-output : ${{steps.task-def.outputs.task-definition}}
+    
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -86,6 +88,7 @@ jobs:
         task-definition: ${{ env.ECS_TASK_DEFINITION }}
         container-name: ${{ env.CONTAINER_NAME }}
         image: ${{ steps.build-image.outputs.image }}
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -95,8 +98,8 @@ jobs:
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        main-task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        task-definition: ${{ steps.task-def.outputs.main-task-definition }}
+#         task-definition: ${{ steps.task-def.outputs.task-definition }}
+        task-definition: ${{ needs.build.outputs.build-output }}
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
